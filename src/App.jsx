@@ -1,6 +1,6 @@
 // Ihram Token Frontend with Admin Panel
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import * as ethers from "ethers";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const tokenSaleAddress = "0xdB2D5EaC33846FC5Cf85C3c597C723079C0eB68D";
