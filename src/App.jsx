@@ -1,4 +1,4 @@
-// Ihram Token Frontend with Admin Panel
+// Ihram Token Frontend with Full Admin Tools
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
@@ -11,6 +11,8 @@ const usdcAddress = "0xbdb64f882e1038168dfdb1d714a6f4061dd6a3f8";
 const tokenSaleABI = [
   "function buyTokens() payable",
   "function withdrawUnsoldTokens()",
+  "function updateRate(uint256)",
+  "function toggleSale()",
   "function owner() view returns (address)"
 ];
 const vestingABI = [
@@ -29,6 +31,7 @@ export default function App() {
   const [balance, setBalance] = useState(null);
   const [claimable, setClaimable] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [newRate, setNewRate] = useState("");
 
   const connectWallet = async () => {
     if (!window.ethereum) return alert("Please install MetaMask");
@@ -120,6 +123,35 @@ export default function App() {
     }
   };
 
+  const updateTokenRate = async () => {
+    if (!provider || !newRate || isNaN(newRate)) return alert("Enter a valid rate");
+    const signer = provider.getSigner();
+    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
+    try {
+      const tx = await sale.updateRate(newRate);
+      await tx.wait();
+      alert("Rate updated successfully");
+      setNewRate("");
+    } catch (e) {
+      alert("Update rate failed");
+      console.error(e);
+    }
+  };
+
+  const toggleSale = async () => {
+    if (!provider) return;
+    const signer = provider.getSigner();
+    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
+    try {
+      const tx = await sale.toggleSale();
+      await tx.wait();
+      alert("Sale toggled successfully");
+    } catch (e) {
+      alert("Toggle failed");
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     if (wallet && provider) {
       fetchTokenPrice();
@@ -168,10 +200,29 @@ export default function App() {
         {isOwner && (
           <div className="border p-4 rounded-xl shadow bg-gray-50">
             <h2 className="text-xl font-semibold text-red-600">Admin Panel</h2>
-            <p className="text-sm text-gray-600 mb-2">You are the contract owner.</p>
-            <button onClick={withdrawUnsoldTokens} className="bg-red-600 text-white px-4 py-2 rounded-md">
-              Withdraw Unsold Tokens
-            </button>
+            <p className="text-sm text-gray-600 mb-4">You are the contract owner.</p>
+
+            <div className="mb-3">
+              <button onClick={toggleSale} className="bg-orange-500 text-white px-4 py-2 rounded-md mr-2">
+                Toggle Sale
+              </button>
+              <button onClick={withdrawUnsoldTokens} className="bg-red-600 text-white px-4 py-2 rounded-md">
+                Withdraw Unsold Tokens
+              </button>
+            </div>
+
+            <div className="mb-2">
+              <input
+                type="number"
+                placeholder="New token rate (per ETH)"
+                value={newRate}
+                onChange={(e) => setNewRate(e.target.value)}
+                className="p-2 border rounded-md mr-2"
+              />
+              <button onClick={updateTokenRate} className="bg-blue-600 text-white px-4 py-2 rounded-md">
+                Update Rate
+              </button>
+            </div>
           </div>
         )}
       </div>
