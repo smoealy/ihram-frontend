@@ -1,10 +1,5 @@
-// Ihram Token Frontend (React + Vite + Tailwind)
-// Step-by-step deployment coming after code
-
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const tokenSaleAddress = "0xdB2D5EaC33846FC5Cf85C3c597C723079C0eB68D";
@@ -12,15 +7,17 @@ const vestingAddress = "0xc126489BA66D7b0Dc06F5a4962778e25d2912Ba4";
 const routerAddress = "0xAd42230785b8f66523Bd1A00967cB289cbb6AeAC";
 const usdcAddress = "0xbdb64f882e1038168dfdb1d714a6f4061dd6a3f8";
 
-// Minimal ABIs
 const tokenSaleABI = ["function buyTokens() payable"];
-const vestingABI = ["function claim()", "function getClaimableAmount(address) view returns (uint256)"];
+const vestingABI = [
+  "function claim()",
+  "function getClaimableAmount(address) view returns (uint256)"
+];
 const tokenABI = ["function balanceOf(address) view returns (uint256)"];
 const routerABI = [
   "function getAmountsOut(uint amountIn, address[] memory path) view returns (uint[] memory amounts)"
 ];
 
-export default function Home() {
+export default function App() {
   const [wallet, setWallet] = useState(null);
   const [provider, setProvider] = useState(null);
   const [price, setPrice] = useState(null);
@@ -36,14 +33,20 @@ export default function Home() {
   };
 
   const fetchTokenPrice = async () => {
+    if (!provider || !wallet) return;
     const signer = provider.getSigner();
     const router = new ethers.Contract(routerAddress, routerABI, signer);
     const path = [tokenAddress, usdcAddress];
-    const amounts = await router.getAmountsOut(ethers.utils.parseUnits("1", 18), path);
-    setPrice(ethers.utils.formatUnits(amounts[1], 18));
+    try {
+      const amounts = await router.getAmountsOut(ethers.utils.parseUnits("1", 18), path);
+      setPrice(ethers.utils.formatUnits(amounts[1], 18));
+    } catch (e) {
+      console.error("Price fetch failed:", e);
+    }
   };
 
   const fetchBalance = async () => {
+    if (!provider || !wallet) return;
     const signer = provider.getSigner();
     const token = new ethers.Contract(tokenAddress, tokenABI, signer);
     const bal = await token.balanceOf(wallet);
@@ -51,6 +54,7 @@ export default function Home() {
   };
 
   const fetchClaimable = async () => {
+    if (!provider || !wallet) return;
     const signer = provider.getSigner();
     const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
     const amount = await vest.getClaimableAmount(wallet);
@@ -58,15 +62,34 @@ export default function Home() {
   };
 
   const buyTokens = async () => {
+    if (!provider) return;
     const signer = provider.getSigner();
     const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
-    await sale.buyTokens({ value: ethers.utils.parseEther("0.01") });
+    try {
+      const tx = await sale.buyTokens({ value: ethers.utils.parseEther("0.01") });
+      await tx.wait();
+      alert("Tokens purchased successfully");
+      fetchBalance();
+    } catch (e) {
+      alert("Transaction failed");
+      console.error(e);
+    }
   };
 
   const claim = async () => {
+    if (!provider) return;
     const signer = provider.getSigner();
     const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
-    await vest.claim();
+    try {
+      const tx = await vest.claim();
+      await tx.wait();
+      alert("Claim successful");
+      fetchBalance();
+      fetchClaimable();
+    } catch (e) {
+      alert("Claim failed");
+      console.error(e);
+    }
   };
 
   useEffect(() => {
@@ -83,37 +106,35 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-center text-green-700">Ihram Token Dashboard</h1>
 
         <div className="flex justify-center">
-          <Button onClick={connectWallet}>{wallet ? "Connected" : "Connect Wallet"}</Button>
+          <button onClick={connectWallet} className="bg-green-600 text-white px-4 py-2 rounded-md">
+            {wallet ? wallet.slice(0, 6) + "..." + wallet.slice(-4) : "Connect Wallet"}
+          </button>
         </div>
 
-        <Card>
-          <CardContent className="space-y-2">
-            <h2 className="text-xl font-semibold">Price</h2>
-            <p>1 IHRAM = {price ?? "..."} USDC</p>
-          </CardContent>
-        </Card>
+        <div className="border p-4 rounded-xl shadow">
+          <h2 className="text-xl font-semibold">Price</h2>
+          <p>1 IHRAM = {price ?? "..."} USDC</p>
+        </div>
 
-        <Card>
-          <CardContent className="space-y-2">
-            <h2 className="text-xl font-semibold">Buy Tokens</h2>
-            <Button onClick={buyTokens}>Buy for 0.01 ETH</Button>
-          </CardContent>
-        </Card>
+        <div className="border p-4 rounded-xl shadow">
+          <h2 className="text-xl font-semibold">Buy Tokens</h2>
+          <button onClick={buyTokens} className="bg-blue-600 text-white px-4 py-2 rounded-md mt-2">
+            Buy for 0.01 ETH
+          </button>
+        </div>
 
-        <Card>
-          <CardContent className="space-y-2">
-            <h2 className="text-xl font-semibold">My Balance</h2>
-            <p>{balance ?? "..."} IHRAM</p>
-          </CardContent>
-        </Card>
+        <div className="border p-4 rounded-xl shadow">
+          <h2 className="text-xl font-semibold">My Balance</h2>
+          <p>{balance ?? "..."} IHRAM</p>
+        </div>
 
-        <Card>
-          <CardContent className="space-y-2">
-            <h2 className="text-xl font-semibold">Claimable Tokens</h2>
-            <p>{claimable ?? "..."} IHRAM</p>
-            <Button onClick={claim}>Claim</Button>
-          </CardContent>
-        </Card>
+        <div className="border p-4 rounded-xl shadow">
+          <h2 className="text-xl font-semibold">Claimable Tokens</h2>
+          <p>{claimable ?? "..."} IHRAM</p>
+          <button onClick={claim} className="bg-yellow-500 text-white px-4 py-2 rounded-md mt-2">
+            Claim Tokens
+          </button>
+        </div>
       </div>
     </div>
   );
