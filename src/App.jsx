@@ -1,3 +1,4 @@
+// Ihram Token Frontend with Admin Panel
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
@@ -7,7 +8,11 @@ const vestingAddress = "0xc126489BA66D7b0Dc06F5a4962778e25d2912Ba4";
 const routerAddress = "0xAd42230785b8f66523Bd1A00967cB289cbb6AeAC";
 const usdcAddress = "0xbdb64f882e1038168dfdb1d714a6f4061dd6a3f8";
 
-const tokenSaleABI = ["function buyTokens() payable"];
+const tokenSaleABI = [
+  "function buyTokens() payable",
+  "function withdrawUnsoldTokens()",
+  "function owner() view returns (address)"
+];
 const vestingABI = [
   "function claim()",
   "function getClaimableAmount(address) view returns (uint256)"
@@ -23,6 +28,7 @@ export default function App() {
   const [price, setPrice] = useState(null);
   const [balance, setBalance] = useState(null);
   const [claimable, setClaimable] = useState(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   const connectWallet = async () => {
     if (!window.ethereum) return alert("Please install MetaMask");
@@ -30,6 +36,14 @@ export default function App() {
     const ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
     setWallet(accounts[0]);
     setProvider(ethersProvider);
+  };
+
+  const checkOwnership = async () => {
+    if (!provider || !wallet) return;
+    const signer = provider.getSigner();
+    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
+    const contractOwner = await sale.owner();
+    setIsOwner(contractOwner.toLowerCase() === wallet.toLowerCase());
   };
 
   const fetchTokenPrice = async () => {
@@ -92,11 +106,26 @@ export default function App() {
     }
   };
 
+  const withdrawUnsoldTokens = async () => {
+    if (!provider) return;
+    const signer = provider.getSigner();
+    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
+    try {
+      const tx = await sale.withdrawUnsoldTokens();
+      await tx.wait();
+      alert("Withdrawal successful");
+    } catch (e) {
+      alert("Withdraw failed");
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     if (wallet && provider) {
       fetchTokenPrice();
       fetchBalance();
       fetchClaimable();
+      checkOwnership();
     }
   }, [wallet]);
 
@@ -135,6 +164,16 @@ export default function App() {
             Claim Tokens
           </button>
         </div>
+
+        {isOwner && (
+          <div className="border p-4 rounded-xl shadow bg-gray-50">
+            <h2 className="text-xl font-semibold text-red-600">Admin Panel</h2>
+            <p className="text-sm text-gray-600 mb-2">You are the contract owner.</p>
+            <button onClick={withdrawUnsoldTokens} className="bg-red-600 text-white px-4 py-2 rounded-md">
+              Withdraw Unsold Tokens
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
