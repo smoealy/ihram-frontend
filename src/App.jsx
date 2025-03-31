@@ -1,4 +1,4 @@
-// Ihram Token Frontend with Full Admin Tools
+// Ihram Token Frontend with Admin + Vesting + Community Dashboard
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
@@ -7,6 +7,7 @@ const tokenSaleAddress = "0xdB2D5EaC33846FC5Cf85C3c597C723079C0eB68D";
 const vestingAddress = "0xc126489BA66D7b0Dc06F5a4962778e25d2912Ba4";
 const routerAddress = "0xAd42230785b8f66523Bd1A00967cB289cbb6AeAC";
 const usdcAddress = "0xbdb64f882e1038168dfdb1d714a6f4061dd6a3f8";
+const etherscanAPIKey = "ASPJKQQ3S5S6MCF4NI54Q8A6PFYWFWFBW1";
 
 const tokenSaleABI = [
   "function buyTokens() payable",
@@ -17,7 +18,8 @@ const tokenSaleABI = [
 ];
 const vestingABI = [
   "function claim()",
-  "function getClaimableAmount(address) view returns (uint256)"
+  "function getClaimableAmount(address) view returns (uint256)",
+  "function schedules(address) view returns (uint256 totalAmount, uint256 releasedAmount, uint256 startTime, uint256 cliffDuration, uint256 vestingDuration)"
 ];
 const tokenABI = ["function balanceOf(address) view returns (uint256)"];
 const routerABI = [
@@ -32,6 +34,8 @@ export default function App() {
   const [claimable, setClaimable] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [newRate, setNewRate] = useState("");
+  const [vestingInfo, setVestingInfo] = useState(null);
+  const [holders, setHolders] = useState([]);
 
   const connectWallet = async () => {
     if (!window.ethereum) return alert("Please install MetaMask");
@@ -70,6 +74,35 @@ export default function App() {
     setBalance(ethers.utils.formatUnits(bal, 18));
   };
 
+  const fetchVesting = async () => {
+    if (!provider || !wallet) return;
+    const signer = provider.getSigner();
+    const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
+    const sched = await vest.schedules(wallet);
+    const claimableAmount = await vest.getClaimableAmount(wallet);
+    setVestingInfo({
+      total: sched.totalAmount,
+      released: sched.releasedAmount,
+      start: sched.startTime,
+      cliff: sched.cliffDuration,
+      duration: sched.vestingDuration,
+      claimable: claimableAmount
+    });
+  };
+
+  const fetchCommunity = async () => {
+    try {
+      const res = await fetch(`https://api-sepolia.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${tokenAddress}&page=1&offset=100&apikey=${etherscanAPIKey}`);
+      const data = await res.json();
+      if (data.result) {
+        const sorted = data.result.sort((a, b) => parseFloat(b.TokenHolderQuantity) - parseFloat(a.TokenHolderQuantity));
+        setHolders(sorted);
+      }
+    } catch (e) {
+      console.error("Failed to fetch holders:", e);
+    }
+  };
+
   const fetchClaimable = async () => {
     if (!provider || !wallet) return;
     const signer = provider.getSigner();
@@ -103,6 +136,7 @@ export default function App() {
       alert("Claim successful");
       fetchBalance();
       fetchClaimable();
+      fetchVesting();
     } catch (e) {
       alert("Claim failed");
       console.error(e);
@@ -157,6 +191,8 @@ export default function App() {
       fetchTokenPrice();
       fetchBalance();
       fetchClaimable();
+      fetchVesting();
+      fetchCommunity();
       checkOwnership();
     }
   }, [wallet]);
@@ -196,6 +232,45 @@ export default function App() {
             Claim Tokens
           </button>
         </div>
+
+        {vestingInfo && (
+          <div className="border p-4 rounded-xl shadow bg-gray-50">
+            <h2 className="text-xl font-semibold text-purple-700">Vesting Schedule</h2>
+            <p>Total: {ethers.utils.formatUnits(vestingInfo.total, 18)} IHRAM</p>
+            <p>Released: {ethers.utils.formatUnits(vestingInfo.released, 18)} IHRAM</p>
+            <p>Cliff: {new Date((vestingInfo.start + vestingInfo.cliff) * 1000).toLocaleString()}</p>
+            <p>End: {new Date((vestingInfo.start + vestingInfo.duration) * 1000).toLocaleString()}</p>
+            <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
+              <div
+                className="bg-purple-600 h-3 rounded-full"
+                style={{ width: `${(Number(vestingInfo.released) / Number(vestingInfo.total)) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        {holders.length > 0 && (
+          <div className="border p-4 rounded-xl shadow bg-white">
+            <h2 className="text-xl font-semibold text-blue-700">Community Dashboard</h2>
+            <p className="mb-2 text-sm">Total Holders: {holders.length}</p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th className="text-left">Address</th>
+                  <th className="text-right">Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {holders.slice(0, 10).map((holder, idx) => (
+                  <tr key={idx} className="border-t">
+                    <td>{holder.TokenHolderAddress.slice(0, 6)}...{holder.TokenHolderAddress.slice(-4)}</td>
+                    <td className="text-right">{parseFloat(holder.TokenHolderQuantity).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {isOwner && (
           <div className="border p-4 rounded-xl shadow bg-gray-50">
