@@ -1,4 +1,4 @@
-// Ihram Token Frontend with Admin + Vesting + Community Dashboard
+// Ihram Token Frontend with Flexible Buy Amount + Full Admin + Vesting + Community Dashboard
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
@@ -36,6 +36,7 @@ export default function App() {
   const [newRate, setNewRate] = useState("");
   const [vestingInfo, setVestingInfo] = useState(null);
   const [holders, setHolders] = useState([]);
+  const [ethAmount, setEthAmount] = useState("0.01");
 
   const connectWallet = async () => {
     if (!window.ethereum) return alert("Please install MetaMask");
@@ -116,7 +117,7 @@ export default function App() {
     const signer = provider.getSigner();
     const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
     try {
-      const tx = await sale.buyTokens({ value: ethers.utils.parseEther("0.01") });
+      const tx = await sale.buyTokens({ value: ethers.utils.parseEther(ethAmount || "0.01") });
       await tx.wait();
       alert("Tokens purchased successfully");
       fetchBalance();
@@ -215,8 +216,16 @@ export default function App() {
 
         <div className="border p-4 rounded-xl shadow">
           <h2 className="text-xl font-semibold">Buy Tokens</h2>
+          <input
+            type="number"
+            step="0.001"
+            placeholder="Enter ETH amount"
+            value={ethAmount}
+            onChange={(e) => setEthAmount(e.target.value)}
+            className="p-2 border rounded-md mr-2"
+          />
           <button onClick={buyTokens} className="bg-blue-600 text-white px-4 py-2 rounded-md mt-2">
-            Buy for 0.01 ETH
+            Buy for {ethAmount || "0.01"} ETH
           </button>
         </div>
 
@@ -246,29 +255,6 @@ export default function App() {
                 style={{ width: `${(Number(vestingInfo.released) / Number(vestingInfo.total)) * 100}%` }}
               ></div>
             </div>
-          </div>
-        )}
-
-        {holders.length > 0 && (
-          <div className="border p-4 rounded-xl shadow bg-white">
-            <h2 className="text-xl font-semibold text-blue-700">Community Dashboard</h2>
-            <p className="mb-2 text-sm">Total Holders: {holders.length}</p>
-            <table className="w-full text-sm">
-              <thead>
-                <tr>
-                  <th className="text-left">Address</th>
-                  <th className="text-right">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {holders.slice(0, 10).map((holder, idx) => (
-                  <tr key={idx} className="border-t">
-                    <td>{holder.TokenHolderAddress.slice(0, 6)}...{holder.TokenHolderAddress.slice(-4)}</td>
-                    <td className="text-right">{parseFloat(holder.TokenHolderQuantity).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         )}
 
