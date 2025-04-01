@@ -1,9 +1,9 @@
-// Ihram Token Frontend (Updated for New TokenSale Contract)
+// Ihram Token Frontend (Updated for TokenSale Round Admin)
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
-const tokenSaleAddress = "0xa703b6393b0caf374cb7ebe2eb760bb372f38d82"; // UPDATED
+const tokenSaleAddress = "0xa703b6393b0caf374cb7ebe2eb760bb372f38d82";
 const vestingAddress = "0xc126489BA66D7b0Dc06F5a4962778e25d2912Ba4";
 const routerAddress = "0xAd42230785b8f66523Bd1A00967cB289cbb6AeAC";
 const usdcAddress = "0xbdb64f882e1038168dfdb1d714a6f4061dd6a3f8";
@@ -35,6 +35,8 @@ export default function App() {
   const [isOwner, setIsOwner] = useState(false);
   const [holders, setHolders] = useState([]);
   const [ethAmount, setEthAmount] = useState("0.01");
+  const [roundConfig, setRoundConfig] = useState({ roundId: 1, rate: 1000, min: "0.01", max: "5", cap: "100", vesting: "0x0000000000000000000000000000000000000000" });
+  const [activateId, setActivateId] = useState(1);
 
   const connectWallet = async () => {
     if (!window.ethereum) return alert("Please install MetaMask");
@@ -85,7 +87,7 @@ export default function App() {
     if (!provider || !wallet) return;
     const signer = provider.getSigner();
     const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
-    const sched = await vest.schedules(wallet);
+    await vest.schedules(wallet);
     setClaimable(ethers.utils.formatUnits(await vest.getClaimableAmount(wallet), 18));
   };
 
@@ -100,6 +102,41 @@ export default function App() {
       fetchBalance();
     } catch (e) {
       alert("Transaction failed");
+      console.error(e);
+    }
+  };
+
+  const configureRound = async () => {
+    if (!provider) return;
+    const signer = provider.getSigner();
+    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
+    try {
+      const tx = await sale.configureRound(
+        roundConfig.roundId,
+        roundConfig.rate,
+        ethers.utils.parseEther(roundConfig.min),
+        ethers.utils.parseEther(roundConfig.max),
+        ethers.utils.parseEther(roundConfig.cap),
+        roundConfig.vesting
+      );
+      await tx.wait();
+      alert("Round configured successfully");
+    } catch (e) {
+      alert("Configure failed");
+      console.error(e);
+    }
+  };
+
+  const activateRound = async () => {
+    if (!provider) return;
+    const signer = provider.getSigner();
+    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
+    try {
+      const tx = await sale.activateRound(activateId);
+      await tx.wait();
+      alert("Round activated");
+    } catch (e) {
+      alert("Activation failed");
       console.error(e);
     }
   };
@@ -153,14 +190,29 @@ export default function App() {
         <div className="border p-4 rounded-xl shadow">
           <h2 className="text-xl font-semibold">Claimable Tokens</h2>
           <p>{claimable ?? "..."} IHRAM</p>
-          {/* Optional claim button if vesting applies */}
         </div>
 
         {isOwner && (
           <div className="border p-4 rounded-xl shadow bg-gray-50">
             <h2 className="text-xl font-semibold text-red-600">Admin Panel</h2>
             <p className="text-sm text-gray-600 mb-4">You are the contract owner.</p>
-            <p className="text-sm text-gray-600">Use Remix or Etherscan to configure rounds or manage the sale.</p>
+
+            <div className="mb-4">
+              <h3 className="font-bold">Configure Round</h3>
+              <input type="number" placeholder="Round ID" value={roundConfig.roundId} onChange={e => setRoundConfig({ ...roundConfig, roundId: parseInt(e.target.value) })} className="p-1 border rounded m-1" />
+              <input type="number" placeholder="Rate" value={roundConfig.rate} onChange={e => setRoundConfig({ ...roundConfig, rate: parseInt(e.target.value) })} className="p-1 border rounded m-1" />
+              <input type="text" placeholder="Min ETH" value={roundConfig.min} onChange={e => setRoundConfig({ ...roundConfig, min: e.target.value })} className="p-1 border rounded m-1" />
+              <input type="text" placeholder="Max ETH" value={roundConfig.max} onChange={e => setRoundConfig({ ...roundConfig, max: e.target.value })} className="p-1 border rounded m-1" />
+              <input type="text" placeholder="Cap ETH" value={roundConfig.cap} onChange={e => setRoundConfig({ ...roundConfig, cap: e.target.value })} className="p-1 border rounded m-1" />
+              <input type="text" placeholder="Vesting Address" value={roundConfig.vesting} onChange={e => setRoundConfig({ ...roundConfig, vesting: e.target.value })} className="p-1 border rounded m-1 w-full" />
+              <button onClick={configureRound} className="bg-purple-600 text-white px-4 py-2 rounded-md mt-2">Configure</button>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="font-bold">Activate Round</h3>
+              <input type="number" value={activateId} onChange={e => setActivateId(parseInt(e.target.value))} className="p-1 border rounded m-1" />
+              <button onClick={activateRound} className="bg-green-700 text-white px-4 py-2 rounded-md mt-2">Activate</button>
+            </div>
           </div>
         )}
       </div>
