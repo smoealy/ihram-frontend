@@ -1,9 +1,9 @@
-// Ihram Token Frontend with Flexible Buy Amount + Full Admin + Vesting + Community Dashboard
+// Ihram Token Frontend (Updated for New TokenSale Contract)
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
-const tokenSaleAddress = "0xdB2D5EaC33846FC5Cf85C3c597C723079C0eB68D";
+const tokenSaleAddress = "0xa703b6393b0caf374cb7ebe2eb760bb372f38d82"; // UPDATED
 const vestingAddress = "0xc126489BA66D7b0Dc06F5a4962778e25d2912Ba4";
 const routerAddress = "0xAd42230785b8f66523Bd1A00967cB289cbb6AeAC";
 const usdcAddress = "0xbdb64f882e1038168dfdb1d714a6f4061dd6a3f8";
@@ -11,9 +11,9 @@ const etherscanAPIKey = "ASPJKQQ3S5S6MCF4NI54Q8A6PFYWFWFBW1";
 
 const tokenSaleABI = [
   "function buyTokens() payable",
-  "function withdrawUnsoldTokens()",
-  "function updateRate(uint256)",
-  "function toggleSale()",
+  "function configureRound(uint256,uint256,uint256,uint256,uint256,address)",
+  "function activateRound(uint256)",
+  "function getCurrentRound() view returns (tuple(bool active,uint256 rate,uint256 minContribution,uint256 maxContribution,uint256 cap,uint256 raised,address vestingAddress))",
   "function owner() view returns (address)"
 ];
 const vestingABI = [
@@ -33,8 +33,6 @@ export default function App() {
   const [balance, setBalance] = useState(null);
   const [claimable, setClaimable] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [newRate, setNewRate] = useState("");
-  const [vestingInfo, setVestingInfo] = useState(null);
   const [holders, setHolders] = useState([]);
   const [ethAmount, setEthAmount] = useState("0.01");
 
@@ -75,41 +73,20 @@ export default function App() {
     setBalance(ethers.utils.formatUnits(bal, 18));
   };
 
-  const fetchVesting = async () => {
-    if (!provider || !wallet) return;
-    const signer = provider.getSigner();
-    const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
-    const sched = await vest.schedules(wallet);
-    const claimableAmount = await vest.getClaimableAmount(wallet);
-    setVestingInfo({
-      total: sched.totalAmount,
-      released: sched.releasedAmount,
-      start: sched.startTime,
-      cliff: sched.cliffDuration,
-      duration: sched.vestingDuration,
-      claimable: claimableAmount
-    });
-  };
-
-  const fetchCommunity = async () => {
-    try {
-      const res = await fetch(`https://api-sepolia.etherscan.io/api?module=token&action=tokenholderlist&contractaddress=${tokenAddress}&page=1&offset=100&apikey=${etherscanAPIKey}`);
-      const data = await res.json();
-      if (data.result) {
-        const sorted = data.result.sort((a, b) => parseFloat(b.TokenHolderQuantity) - parseFloat(a.TokenHolderQuantity));
-        setHolders(sorted);
-      }
-    } catch (e) {
-      console.error("Failed to fetch holders:", e);
-    }
-  };
-
   const fetchClaimable = async () => {
     if (!provider || !wallet) return;
     const signer = provider.getSigner();
     const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
     const amount = await vest.getClaimableAmount(wallet);
     setClaimable(ethers.utils.formatUnits(amount, 18));
+  };
+
+  const fetchVesting = async () => {
+    if (!provider || !wallet) return;
+    const signer = provider.getSigner();
+    const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
+    const sched = await vest.schedules(wallet);
+    setClaimable(ethers.utils.formatUnits(await vest.getClaimableAmount(wallet), 18));
   };
 
   const buyTokens = async () => {
@@ -127,73 +104,12 @@ export default function App() {
     }
   };
 
-  const claim = async () => {
-    if (!provider) return;
-    const signer = provider.getSigner();
-    const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
-    try {
-      const tx = await vest.claim();
-      await tx.wait();
-      alert("Claim successful");
-      fetchBalance();
-      fetchClaimable();
-      fetchVesting();
-    } catch (e) {
-      alert("Claim failed");
-      console.error(e);
-    }
-  };
-
-  const withdrawUnsoldTokens = async () => {
-    if (!provider) return;
-    const signer = provider.getSigner();
-    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
-    try {
-      const tx = await sale.withdrawUnsoldTokens();
-      await tx.wait();
-      alert("Withdrawal successful");
-    } catch (e) {
-      alert("Withdraw failed");
-      console.error(e);
-    }
-  };
-
-  const updateTokenRate = async () => {
-    if (!provider || !newRate || isNaN(newRate)) return alert("Enter a valid rate");
-    const signer = provider.getSigner();
-    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
-    try {
-      const tx = await sale.updateRate(newRate);
-      await tx.wait();
-      alert("Rate updated successfully");
-      setNewRate("");
-    } catch (e) {
-      alert("Update rate failed");
-      console.error(e);
-    }
-  };
-
-  const toggleSale = async () => {
-    if (!provider) return;
-    const signer = provider.getSigner();
-    const sale = new ethers.Contract(tokenSaleAddress, tokenSaleABI, signer);
-    try {
-      const tx = await sale.toggleSale();
-      await tx.wait();
-      alert("Sale toggled successfully");
-    } catch (e) {
-      alert("Toggle failed");
-      console.error(e);
-    }
-  };
-
   useEffect(() => {
     if (wallet && provider) {
       fetchTokenPrice();
       fetchBalance();
       fetchClaimable();
       fetchVesting();
-      fetchCommunity();
       checkOwnership();
     }
   }, [wallet]);
@@ -237,53 +153,14 @@ export default function App() {
         <div className="border p-4 rounded-xl shadow">
           <h2 className="text-xl font-semibold">Claimable Tokens</h2>
           <p>{claimable ?? "..."} IHRAM</p>
-          <button onClick={claim} className="bg-yellow-500 text-white px-4 py-2 rounded-md mt-2">
-            Claim Tokens
-          </button>
+          {/* Optional claim button if vesting applies */}
         </div>
-
-        {vestingInfo && (
-          <div className="border p-4 rounded-xl shadow bg-gray-50">
-            <h2 className="text-xl font-semibold text-purple-700">Vesting Schedule</h2>
-            <p>Total: {ethers.utils.formatUnits(vestingInfo.total, 18)} IHRAM</p>
-            <p>Released: {ethers.utils.formatUnits(vestingInfo.released, 18)} IHRAM</p>
-            <p>Cliff: {new Date((vestingInfo.start + vestingInfo.cliff) * 1000).toLocaleString()}</p>
-            <p>End: {new Date((vestingInfo.start + vestingInfo.duration) * 1000).toLocaleString()}</p>
-            <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
-              <div
-                className="bg-purple-600 h-3 rounded-full"
-                style={{ width: `${(Number(vestingInfo.released) / Number(vestingInfo.total)) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
 
         {isOwner && (
           <div className="border p-4 rounded-xl shadow bg-gray-50">
             <h2 className="text-xl font-semibold text-red-600">Admin Panel</h2>
             <p className="text-sm text-gray-600 mb-4">You are the contract owner.</p>
-
-            <div className="mb-3">
-              <button onClick={toggleSale} className="bg-orange-500 text-white px-4 py-2 rounded-md mr-2">
-                Toggle Sale
-              </button>
-              <button onClick={withdrawUnsoldTokens} className="bg-red-600 text-white px-4 py-2 rounded-md">
-                Withdraw Unsold Tokens
-              </button>
-            </div>
-
-            <div className="mb-2">
-              <input
-                type="number"
-                placeholder="New token rate (per ETH)"
-                value={newRate}
-                onChange={(e) => setNewRate(e.target.value)}
-                className="p-2 border rounded-md mr-2"
-              />
-              <button onClick={updateTokenRate} className="bg-blue-600 text-white px-4 py-2 rounded-md">
-                Update Rate
-              </button>
-            </div>
+            <p className="text-sm text-gray-600">Use Remix or Etherscan to configure rounds or manage the sale.</p>
           </div>
         )}
       </div>
