@@ -1,4 +1,5 @@
 // Ihram Token Frontend (Updated for TokenSale Round Admin)
+import DashboardWidgets from "./DashboardWidgets";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
