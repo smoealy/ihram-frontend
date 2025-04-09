@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
-import { ethers } from "ethers";
+// Ihram Token Frontend (Updated with Redemption Form and TokenSale Admin)
 import DashboardWidgets from "./DashboardWidgets";
 import RedemptionForm from "./RedemptionForm";
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const tokenSaleAddress = "0xa703b6393b0caf374cb7ebe2eb760bb372f38d82";
 const vestingAddress = "0xc126489BA66D7b0Dc06F5a4962778e25d2912Ba4";
 const routerAddress = "0xAd42230785b8f66523Bd1A00967cB289cbb6AeAC";
 const usdcAddress = "0xbdb64f882e1038168dfdb1d714a6f4061dd6a3f8";
-const etherscanAPIKey = "ASPJKQQ3S5S6MCF4NI54Q8A6PFYWFWFBW1";
 
 const tokenSaleABI = [
   "function buyTokens() payable",
@@ -17,12 +17,15 @@ const tokenSaleABI = [
   "function getCurrentRound() view returns (tuple(bool active,uint256 rate,uint256 minContribution,uint256 maxContribution,uint256 cap,uint256 raised,address vestingAddress))",
   "function owner() view returns (address)"
 ];
+
 const vestingABI = [
   "function claim()",
   "function getClaimableAmount(address) view returns (uint256)",
   "function schedules(address) view returns (uint256 totalAmount, uint256 releasedAmount, uint256 startTime, uint256 cliffDuration, uint256 vestingDuration)"
 ];
+
 const tokenABI = ["function balanceOf(address) view returns (uint256)"];
+
 const routerABI = [
   "function getAmountsOut(uint amountIn, address[] memory path) view returns (uint[] memory amounts)"
 ];
@@ -35,7 +38,14 @@ export default function App() {
   const [claimable, setClaimable] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [ethAmount, setEthAmount] = useState("0.01");
-  const [roundConfig, setRoundConfig] = useState({ roundId: 1, rate: 1000, min: "0.01", max: "5", cap: "100", vesting: "0x0000000000000000000000000000000000000000" });
+  const [roundConfig, setRoundConfig] = useState({
+    roundId: 1,
+    rate: 1000,
+    min: "0.01",
+    max: "5",
+    cap: "100",
+    vesting: "0x0000000000000000000000000000000000000000"
+  });
   const [activateId, setActivateId] = useState(1);
 
   const connectWallet = async () => {
@@ -149,12 +159,13 @@ export default function App() {
       fetchVesting();
       checkOwnership();
     }
-  }, [wallet, provider]);
+  }, [wallet]);
 
   return (
     <div className="min-h-screen bg-white text-gray-800 p-4 md:p-10">
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-4xl font-bold text-center text-green-700">Ihram Token Dashboard</h1>
+
         <div className="flex justify-center">
           <button onClick={connectWallet} className="bg-green-600 text-white px-4 py-2 rounded-md">
             {wallet ? wallet.slice(0, 6) + "..." + wallet.slice(-4) : "Connect Wallet"}
@@ -191,10 +202,15 @@ export default function App() {
           <p>{claimable ?? "..."} IHRAM</p>
         </div>
 
+        <DashboardWidgets />
+
+        <RedemptionForm />
+
         {isOwner && (
           <div className="border p-4 rounded-xl shadow bg-gray-50">
             <h2 className="text-xl font-semibold text-red-600">Admin Panel</h2>
             <p className="text-sm text-gray-600 mb-4">You are the contract owner.</p>
+
             <div className="mb-4">
               <h3 className="font-bold">Configure Round</h3>
               <input type="number" placeholder="Round ID" value={roundConfig.roundId} onChange={e => setRoundConfig({ ...roundConfig, roundId: parseInt(e.target.value) })} className="p-1 border rounded m-1" />
@@ -205,6 +221,7 @@ export default function App() {
               <input type="text" placeholder="Vesting Address" value={roundConfig.vesting} onChange={e => setRoundConfig({ ...roundConfig, vesting: e.target.value })} className="p-1 border rounded m-1 w-full" />
               <button onClick={configureRound} className="bg-purple-600 text-white px-4 py-2 rounded-md mt-2">Configure</button>
             </div>
+
             <div className="mb-4">
               <h3 className="font-bold">Activate Round</h3>
               <input type="number" value={activateId} onChange={e => setActivateId(parseInt(e.target.value))} className="p-1 border rounded m-1" />
@@ -212,10 +229,6 @@ export default function App() {
             </div>
           </div>
         )}
-
-        {/* New Dashboard Widgets from Google Sheets */}
-        <DashboardWidgets />
-        <RedemptionForm />
       </div>
     </div>
   );
