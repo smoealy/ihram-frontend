@@ -215,6 +215,7 @@ export default function App() {
 
         {/* New Dashboard Widgets from Google Sheets */}
         <DashboardWidgets />
+        <RedemptionForm />
       </div>
     </div>
   );
