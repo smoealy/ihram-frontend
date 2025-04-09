@@ -1,6 +1,8 @@
 // Ihram Token Frontend (Updated with Redemption Form and TokenSale Admin)
 import DashboardWidgets from "./DashboardWidgets";
 import RedemptionForm from "./RedemptionForm";
+import StakingForm from "./StakingForm";
+import DonationForm from "./DonationForm";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
@@ -204,6 +206,8 @@ export default function App() {
 
         <DashboardWidgets />
         <RedemptionForm />
+        <StakingForm />
+        <DonationForm />
 
         {isOwner && (
           <div className="border p-4 rounded-xl shadow bg-gray-50">
