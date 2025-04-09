@@ -18,6 +18,8 @@ export default function RedemptionForm() {
     tier: "Bronze",
   });
 
+  const [submitted, setSubmitted] = useState(false);
+
   const tiers = {
     Bronze: 500,
     Silver: 750,
@@ -29,11 +31,34 @@ export default function RedemptionForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitted:", formData);
-    // Add Google Sheet submission and token transfer in next steps
+    try {
+      await fetch(
+        "https://script.google.com/macros/s/AKfycbwl1PZvvSbkvR6-0jLHEEQ4iyNDa_E-DNsW9xQS1ijVI60mk3q2rwaeIKbWyfPs3Ru6/exec",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+      setSubmitted(true);
+    } catch (error) {
+      alert("Something went wrong. Try again.");
+      console.error("Submission error:", error);
+    }
   };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-10">
+        <h2 className="text-xl font-semibold text-green-700">🎉 Thank you!</h2>
+        <p>Your redemption form has been submitted.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4 border rounded-xl shadow-md">
