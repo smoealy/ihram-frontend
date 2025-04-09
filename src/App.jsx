@@ -202,7 +202,6 @@ export default function App() {
           <p>{claimable ?? "..."} IHRAM</p>
         </div>
 
-        <DashboardWidgets />
 
         <RedemptionForm />
 
