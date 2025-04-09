@@ -1,4 +1,4 @@
-mport { useState } from "react";
+import { useState } from "react";
 
 export default function StakingForm() {
   const [amount, setAmount] = useState(0);
@@ -6,7 +6,7 @@ export default function StakingForm() {
 
   const handleStake = async () => {
     console.log("Staking", amount, "IHRAM");
-    // Add contract interaction here
+    // Add smart contract call here
     setSubmitted(true);
   };
 
