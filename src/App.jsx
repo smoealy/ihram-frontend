@@ -217,6 +217,7 @@ export default function App() {
           </div>
         )}
       </div>
+      <DashboardWidgets />
     </div>
   );
 }
