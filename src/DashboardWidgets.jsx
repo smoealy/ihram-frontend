@@ -1,69 +1,60 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+// DashboardWidgets.jsx (Updated with Redeem Button, Corrected Display, Coming Soon: Staking & Donation)
 
-// Replace these with your OpenSheet URLs (make sure your sheets are published and public)
-const TIER_SHEET = "https://opensheet.elk.sh/1eEZ3JR5-X0IxyCTYdo3gqTFNUBw2S3mTzkuoamUsuFw/Tiers";
-const SETTINGS_SHEET = "https://opensheet.elk.sh/155ujeYEsQJHFQSXj_-zUZogBivkxp5CUtCjnWd1PWwM/Settings";
+import { useState, useEffect } from 'react';
 
 export default function DashboardWidgets() {
+  const [settings, setSettings] = useState(null);
   const [tiers, setTiers] = useState([]);
-  const [settings, setSettings] = useState({});
 
   useEffect(() => {
-    const fetchSheets = async () => {
-      try {
-        const [tiersRes, settingsRes] = await Promise.all([
-          axios.get(TIER_SHEET),
-          axios.get(SETTINGS_SHEET)
-        ]);
-        // Assuming the Redemption Tiers sheet has columns: "Tier", "Tokens", "Description"
-        setTiers(tiersRes.data);
-
-        // Assuming the Settings sheet returns rows with keys "type" and "amount"
-        // This maps the first row into an object like: { "StakeUSDPerEntry": 150, "DonationUSDPerEntry": 250, ... }
-        const mappedSettings = {};
-        settingsRes.data.forEach((entry) => {
-          // Ensure your sheet has headers exactly matching these keys:
-          // e.g., type: "StakeUSDPerEntry", amount: "150"
-          mappedSettings[entry.type] = parseFloat(entry.amount);
-        });
-        setSettings(mappedSettings);
-      } catch (err) {
-        console.error("Failed to fetch sheet data:", err);
-      }
+    const fetchData = async () => {
+      const settingsRes = await fetch('https://opensheet.elk.sh/155ujeYEsQJHFQSXj_-zUZogBivkxp5CUtCjnWd1PWwM/Settings');
+      const tiersRes = await fetch('https://opensheet.elk.sh/1eEZ3JR5-X0IxyCTYdo3gqTFNUBw2S3mTzkuoamUsuFw/Tiers');
+      const settingsData = await settingsRes.json();
+      const tiersData = await tiersRes.json();
+      setSettings(settingsData[0]);
+      setTiers(tiersData);
     };
-
-    fetchSheets();
+    fetchData();
   }, []);
 
   return (
-    <div className="mt-10 space-y-6">
-      <div className="border p-4 rounded-xl shadow bg-white">
-        <h2 className="text-xl font-bold text-green-700 mb-2">🎁 Giveaway Entry Settings</h2>
-        {Object.keys(settings).length > 0 ? (
-          Object.entries(settings).map(([key, value]) => (
-            <p key={key}>
-              <strong>{key}:</strong> ${value} = 1 Entry
-            </p>
-          ))
+    <div className="space-y-8 mt-10">
+      <div className="border p-4 rounded-xl shadow">
+        <h2 className="text-xl font-bold mb-2">🎁 Giveaway Entry Settings</h2>
+        {settings ? (
+          <ul className="space-y-1">
+            <li>Staking: ${settings.Giveaway_Entry_Staking_USD} = 1 Entry</li>
+            <li>Donation: ${settings.Giveaway_Entry_Donation_USD} = 1 Entry</li>
+            <li>Redemption: {settings.Giveaway_Entry_Redemption_Count} redemption(s) = 1 Entry</li>
+            <li>Minimum Tokens to Redeem: {settings.Redeem_Minimum_Tokens} IHRAM</li>
+          </ul>
         ) : (
           <p>Loading settings...</p>
         )}
       </div>
 
-      <div className="border p-4 rounded-xl shadow bg-white">
-        <h2 className="text-xl font-bold text-green-700 mb-2">🏷️ Redemption Tiers</h2>
+      <div className="border p-4 rounded-xl shadow">
+        <h2 className="text-xl font-bold mb-4">🏷️ Redemption Tiers</h2>
         {tiers.length > 0 ? (
-          tiers.map((tier, idx) => (
-            <div key={idx} className="mb-2">
-              <p>
-                <strong>{tier.Tier}</strong>: {tier.Tokens} IHRAM tokens required — {tier.Description}
-              </p>
-            </div>
-          ))
+          <ul className="space-y-4">
+            {tiers.map((tier, index) => (
+              <li key={index} className="border rounded-lg p-3 bg-gray-50">
+                <p className="font-semibold">{tier["Tier Name"]}: {tier["Token Price"]} IHRAM — {tier.Description}</p>
+                <p className="text-sm text-gray-500 italic">{tier.Notes}</p>
+                <button className="mt-2 px-3 py-1 bg-blue-600 text-white rounded" onClick={() => alert('Redemption form coming soon.')}>Redeem</button>
+              </li>
+            ))}
+          </ul>
         ) : (
           <p>Loading tiers...</p>
         )}
+      </div>
+
+      {/* COMING SOON */}
+      <div className="border p-4 rounded-xl shadow opacity-60">
+        <h2 className="text-xl font-bold mb-2">📥 Staking & 💝 Donations</h2>
+        <p className="text-sm">Coming soon: Stake tokens or donate to earn entries and rewards.</p>
       </div>
     </div>
   );
