@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import DashboardWidgets from "./DashboardWidgets";
+import RedemptionForm from "./RedemptionForm";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const tokenSaleAddress = "0xa703b6393b0caf374cb7ebe2eb760bb372f38d82";
