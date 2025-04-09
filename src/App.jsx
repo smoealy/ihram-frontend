@@ -1,7 +1,6 @@
-// Ihram Token Frontend (Updated for TokenSale Round Admin)
-import DashboardWidgets from "./DashboardWidgets";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
+import DashboardWidgets from "./DashboardWidgets";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const tokenSaleAddress = "0xa703b6393b0caf374cb7ebe2eb760bb372f38d82";
@@ -34,7 +33,6 @@ export default function App() {
   const [balance, setBalance] = useState(null);
   const [claimable, setClaimable] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [holders, setHolders] = useState([]);
   const [ethAmount, setEthAmount] = useState("0.01");
   const [roundConfig, setRoundConfig] = useState({ roundId: 1, rate: 1000, min: "0.01", max: "5", cap: "100", vesting: "0x0000000000000000000000000000000000000000" });
   const [activateId, setActivateId] = useState(1);
@@ -150,13 +148,12 @@ export default function App() {
       fetchVesting();
       checkOwnership();
     }
-  }, [wallet]);
+  }, [wallet, provider]);
 
   return (
     <div className="min-h-screen bg-white text-gray-800 p-4 md:p-10">
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-4xl font-bold text-center text-green-700">Ihram Token Dashboard</h1>
-
         <div className="flex justify-center">
           <button onClick={connectWallet} className="bg-green-600 text-white px-4 py-2 rounded-md">
             {wallet ? wallet.slice(0, 6) + "..." + wallet.slice(-4) : "Connect Wallet"}
@@ -197,7 +194,6 @@ export default function App() {
           <div className="border p-4 rounded-xl shadow bg-gray-50">
             <h2 className="text-xl font-semibold text-red-600">Admin Panel</h2>
             <p className="text-sm text-gray-600 mb-4">You are the contract owner.</p>
-
             <div className="mb-4">
               <h3 className="font-bold">Configure Round</h3>
               <input type="number" placeholder="Round ID" value={roundConfig.roundId} onChange={e => setRoundConfig({ ...roundConfig, roundId: parseInt(e.target.value) })} className="p-1 border rounded m-1" />
@@ -208,7 +204,6 @@ export default function App() {
               <input type="text" placeholder="Vesting Address" value={roundConfig.vesting} onChange={e => setRoundConfig({ ...roundConfig, vesting: e.target.value })} className="p-1 border rounded m-1 w-full" />
               <button onClick={configureRound} className="bg-purple-600 text-white px-4 py-2 rounded-md mt-2">Configure</button>
             </div>
-
             <div className="mb-4">
               <h3 className="font-bold">Activate Round</h3>
               <input type="number" value={activateId} onChange={e => setActivateId(parseInt(e.target.value))} className="p-1 border rounded m-1" />
@@ -216,8 +211,10 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* New Dashboard Widgets from Google Sheets */}
+        <DashboardWidgets />
       </div>
-      <DashboardWidgets />
     </div>
   );
 }
