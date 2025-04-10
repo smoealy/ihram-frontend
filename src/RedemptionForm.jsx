@@ -50,9 +50,11 @@ export default function RedemptionForm() {
       const token = new ethers.Contract(tokenAddress, tokenABI, signer);
       const amount = ethers.utils.parseUnits(tiers[formData.tier].toString(), 18);
 
+      // Send IHRAM tokens to redemption wallet
       const tx = await token.transfer(redemptionWallet, amount);
       await tx.wait();
 
+      // Format form data for Google Sheet
       const sheetData = {
         Name: formData.name,
         "Email/Phone": formData.email,
@@ -72,12 +74,13 @@ export default function RedemptionForm() {
         Tokens: tiers[formData.tier],
       };
 
+      // Send data to Google Apps Script (fix: use text/plain to avoid CORS)
       await fetch(webhookURL, {
         method: "POST",
-        body: JSON.stringify(sheetData),
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "text/plain",
         },
+        body: JSON.stringify(sheetData),
       });
 
       setStatus("✅ Redemption submitted! UmrahCompanions team will contact you.");
