@@ -1,4 +1,4 @@
-// Ihram Token Frontend (Updated with Redemption Form and TokenSale Admin)
+// Ihram Token Frontend (Finalized with Toggleable Forms and Admin Panel)
 import DashboardWidgets from "./DashboardWidgets";
 import RedemptionForm from "./RedemptionForm";
 import StakingForm from "./StakingForm";
@@ -40,6 +40,9 @@ export default function App() {
   const [claimable, setClaimable] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [ethAmount, setEthAmount] = useState("0.01");
+  const [showStaking, setShowStaking] = useState(false);
+  const [showDonation, setShowDonation] = useState(false);
+  const [showRedemption, setShowRedemption] = useState(false);
   const [roundConfig, setRoundConfig] = useState({
     roundId: 1,
     rate: 1000,
@@ -205,8 +208,27 @@ export default function App() {
         </div>
 
         <DashboardWidgets />
-        <StakingForm />
-        <DonationForm />
+
+        <div className="mt-6">
+          <button onClick={() => setShowStaking(!showStaking)} className="bg-indigo-600 text-white px-4 py-2 rounded-md">
+            {showStaking ? "Close Staking" : "📦 Stake IHRAM Tokens"}
+          </button>
+          {showStaking && <StakingForm />}
+        </div>
+
+        <div className="mt-6">
+          <button onClick={() => setShowDonation(!showDonation)} className="bg-yellow-500 text-white px-4 py-2 rounded-md">
+            {showDonation ? "Close Donation" : "💛 Donate to Pilgrim Subsidy Fund"}
+          </button>
+          {showDonation && <DonationForm />}
+        </div>
+
+        <div className="mt-6">
+          <button onClick={() => setShowRedemption(!showRedemption)} className="bg-green-700 text-white px-4 py-2 rounded-md">
+            {showRedemption ? "Close Redemption Form" : "🕌 Redeem IHRAM for Umrah"}
+          </button>
+          {showRedemption && <RedemptionForm />}
+        </div>
 
         {isOwner && (
           <div className="border p-4 rounded-xl shadow bg-gray-50">
