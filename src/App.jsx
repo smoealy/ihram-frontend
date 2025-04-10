@@ -1,8 +1,8 @@
-// Ihram Token Frontend (Finalized with Toggleable Forms and Admin Panel)
+// src/App.jsx
 import DashboardWidgets from "./DashboardWidgets";
-import RedemptionForm from "./RedemptionForm";
 import StakingForm from "./StakingForm";
 import DonationForm from "./DonationForm";
+import RedemptionForm from "./RedemptionForm";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
@@ -40,9 +40,6 @@ export default function App() {
   const [claimable, setClaimable] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [ethAmount, setEthAmount] = useState("0.01");
-  const [showStaking, setShowStaking] = useState(false);
-  const [showDonation, setShowDonation] = useState(false);
-  const [showRedemption, setShowRedemption] = useState(false);
   const [roundConfig, setRoundConfig] = useState({
     roundId: 1,
     rate: 1000,
@@ -52,6 +49,9 @@ export default function App() {
     vesting: "0x0000000000000000000000000000000000000000"
   });
   const [activateId, setActivateId] = useState(1);
+  const [showStaking, setShowStaking] = useState(false);
+  const [showDonation, setShowDonation] = useState(false);
+  const [showRedemption, setShowRedemption] = useState(false);
 
   const connectWallet = async () => {
     if (!window.ethereum) return alert("Please install MetaMask");
@@ -96,14 +96,6 @@ export default function App() {
     const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
     const amount = await vest.getClaimableAmount(wallet);
     setClaimable(ethers.utils.formatUnits(amount, 18));
-  };
-
-  const fetchVesting = async () => {
-    if (!provider || !wallet) return;
-    const signer = provider.getSigner();
-    const vest = new ethers.Contract(vestingAddress, vestingABI, signer);
-    await vest.schedules(wallet);
-    setClaimable(ethers.utils.formatUnits(await vest.getClaimableAmount(wallet), 18));
   };
 
   const buyTokens = async () => {
@@ -161,7 +153,6 @@ export default function App() {
       fetchTokenPrice();
       fetchBalance();
       fetchClaimable();
-      fetchVesting();
       checkOwnership();
     }
   }, [wallet]);
