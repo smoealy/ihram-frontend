@@ -205,7 +205,6 @@ export default function App() {
         </div>
 
         <DashboardWidgets />
-        <RedemptionForm />
         <StakingForm />
         <DonationForm />
 
