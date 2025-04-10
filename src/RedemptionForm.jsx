@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 
 const redemptionWallet = "0xACec56E1Ec695B4aCfC4e1765f3278ab7d73e1a9";
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
-const webhookURL = "https://script.google.com/macros/s/AKfycbwl1PZvvSbkvR6-0jLHEEQ4iyNDa_E-DNsW9xQS1ijVI60mk3q2rwaeIKbWyfPs3Ru6/exec";
+const webhookURL = "https://script.google.com/macros/s/AKfycbzgVfF3bAx97NkK3Z-aJsbgIYeYTX6xslSNfAbZVON2HxhbjYlOnqMSph8Z8d8RmG2i/exec";
 
 const tokenABI = ["function transfer(address to, uint256 amount) public returns (bool)"];
 
@@ -45,16 +45,31 @@ export default function RedemptionForm() {
       if (!window.ethereum) throw new Error("Wallet not detected");
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
-      const token = new ethers.Contract(tokenAddress, tokenABI, signer);
+      const userAddress = await signer.getAddress();
 
+      const token = new ethers.Contract(tokenAddress, tokenABI, signer);
       const amount = ethers.utils.parseUnits(tiers[formData.tier].toString(), 18);
+
       const tx = await token.transfer(redemptionWallet, amount);
       await tx.wait();
 
       const sheetData = {
-        ...formData,
+        Name: formData.name,
+        "Email/Phone": formData.email,
+        Nationality: formData.nationality,
+        "Departure City": formData.departureCity,
+        "Arrival City": formData.arrivalCity,
+        "Private Car": formData.privateCar,
+        Pilgrims: formData.pilgrims,
+        Children: formData.children,
+        Infants: formData.infants,
+        "Hotel Type": formData.hotelType,
+        "Arrival Date": formData.arrivalDate,
+        "Nights Makkah": formData.nightsMakkah,
+        "Nights Madinah": formData.nightsMadinah,
         Tier: formData.tier,
-        TokenAmount: tiers[formData.tier],
+        Wallet: userAddress,
+        Tokens: tiers[formData.tier],
       };
 
       await fetch(webhookURL, {
@@ -73,7 +88,7 @@ export default function RedemptionForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 border rounded-xl shadow-md">
+    <div className="max-w-2xl mx-auto p-4 border rounded-xl shadow-md mt-8">
       <h2 className="text-2xl font-bold mb-4">Umrah Redemption Form</h2>
       {status && <p className="mb-2 text-sm text-blue-700">{status}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">
