@@ -4,7 +4,7 @@ import { WALLET_ADDRESSES } from "./wallets";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const webhookURL = "https://script.google.com/macros/s/AKfycbzB8BPZi5OOAs-xlHXPrqaf28WH1lpZxD94XHrxNT2neAmtRborYatVyuWw7h7wQOr1/exec";
-const DONATION_ENTRY_USD = 50; // 1 entry per $50 donated
+const DONATION_ENTRY_USD = 150;
 
 const tokenABI = ["function transfer(address to, uint256 amount) public returns (bool)"];
 
@@ -32,18 +32,18 @@ export default function DonationForm() {
         Wallet: userAddress,
         Amount: amount,
         Entries: entries,
-        Tier: "-", // Not applicable for donation
       };
 
       await fetch(webhookURL, {
         method: "POST",
-        body: JSON.stringify(data),
+        mode: "cors", // Required for CORS on Google Apps Script
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify(data),
       });
 
-      setStatus("✅ Donation submitted and entry recorded!");
+      setStatus("✅ Donation sent and entry submitted!");
     } catch (err) {
       console.error(err);
       setStatus("❌ Donation failed. Please try again.");
@@ -52,7 +52,7 @@ export default function DonationForm() {
 
   return (
     <div className="border p-4 rounded-xl shadow-md mt-6">
-      <h2 className="text-xl font-semibold">Donate Tokens</h2>
+      <h2 className="text-xl font-semibold">Donate IHRAM</h2>
       {status && <p className="text-blue-600 text-sm mt-1">{status}</p>}
       <div className="flex gap-2 mt-2">
         <input
@@ -62,7 +62,7 @@ export default function DonationForm() {
           onChange={(e) => setAmount(e.target.value)}
           className="p-2 border rounded w-full"
         />
-        <button onClick={handleDonate} className="bg-yellow-600 text-white px-4 py-2 rounded">
+        <button onClick={handleDonate} className="bg-yellow-500 text-white px-4 py-2 rounded">
           Donate
         </button>
       </div>
