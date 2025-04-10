@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 
 const redemptionWallet = "0xACec56E1Ec695B4aCfC4e1765f3278ab7d73e1a9";
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
-const webhookURL = "https://script.google.com/macros/s/AKfycbzgVfF3bAx97NkK3Z-aJsbgIYeYTX6xslSNfAbZVON2HxhbjYlOnqMSph8Z8d8RmG2i/exec";
+const webhookURL = "https://script.google.com/macros/s/AKfycbzB8BPZi5OOAs-xlHXPrqaf28WH1lpZxD94XHrxNT2neAmtRborYatVyuWw7h7wQOr1/exec";
 
 const tokenABI = ["function transfer(address to, uint256 amount) public returns (bool)"];
 
