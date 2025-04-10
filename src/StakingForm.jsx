@@ -4,7 +4,6 @@ import { ethers } from "ethers";
 import { WALLET_ADDRESSES } from "./wallets";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
-const webhookURL = "https://script.google.com/macros/s/AKfycbzB8BPZi5OOAs-xlHXPrqaf28WH1lpZxD94XHrxNT2neAmtRborYatVyuWw7h7wQOr1/exec";
 const STAKING_ENTRY_USD = 150; // 1 entry per $150 staked
 
 const tokenABI = ["function transfer(address to, uint256 amount) public returns (bool)"];
@@ -26,25 +25,11 @@ export default function StakingForm() {
       const tx = await token.transfer(WALLET_ADDRESSES.staking, tokenAmount);
       await tx.wait();
 
+      // Skipping webhook, logging only on-chain
       const entries = Math.floor(parseFloat(amount) / STAKING_ENTRY_USD);
+      console.log(`Staked by ${userAddress} | Amount: ${amount} | Entries: ${entries}`);
 
-      const data = {
-        Wallet: userAddress,
-        Action: "Staking",
-        Amount: amount,
-        Entries: entries,
-        Tier: "-", // Not relevant for staking
-      };
-
-      await fetch(webhookURL, {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      setStatus("✅ Staked and entry submitted!");
+      setStatus("✅ Staked successfully!");
     } catch (err) {
       console.error(err);
       setStatus("❌ Staking failed. Please try again.");
