@@ -5,18 +5,18 @@ const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 
 const tokenABI = [
   {
-    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
-    "name": "balanceOf",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs":[{"internalType":"address","name":"account","type":"address"}],
+    "name":"balanceOf",
+    "outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
+    "stateMutability":"view",
+    "type":"function"
   },
   {
-    "inputs": [],
-    "name": "decimals",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs":[],
+    "name":"decimals",
+    "outputs":[{"internalType":"uint8","name":"","type":"uint8"}],
+    "stateMutability":"view",
+    "type":"function"
   }
 ];
 
@@ -75,9 +75,7 @@ export default function AiPlanner() {
         response,
         correction: feedback
       }),
-      headers: {
-        "Content-Type": "application/json"
-      }
+      headers: { "Content-Type": "application/json" }
     });
 
     const msg = await res.text();
