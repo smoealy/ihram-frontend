@@ -1,9 +1,3 @@
-✅ FULL COPY-PASTE: src/pages/AiPlanner.jsx
-Create or update this file exactly as below:
-
-jsx
-Copy
-Edit
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
