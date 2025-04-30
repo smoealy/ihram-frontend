@@ -1,10 +1,9 @@
-// src/pages/AiPlanner.jsx
-
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
 const IHRAM_TOKEN_ADDRESS = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const IHRAM_TOKEN_ABI = ["function balanceOf(address) view returns (uint256)"];
+const AI_URL = "https://ihram-ai.vercel.app/";
 
 export default function AiPlanner() {
   const [wallet, setWallet] = useState(null);
@@ -12,6 +11,8 @@ export default function AiPlanner() {
   const [eligible, setEligible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const connectWallet = async () => {
     try {
@@ -37,7 +38,14 @@ export default function AiPlanner() {
       const token = new ethers.Contract(IHRAM_TOKEN_ADDRESS, IHRAM_TOKEN_ABI, signer);
       const balance = await token.balanceOf(wallet);
       const readable = parseFloat(ethers.utils.formatUnits(balance, 18));
-      setEligible(readable >= 1000);
+      if (readable >= 1000) {
+        setEligible(true);
+        if (isMobile) {
+          window.location.href = AI_URL;
+        }
+      } else {
+        setEligible(false);
+      }
       setLoading(false);
     } catch (err) {
       setError("Error checking token balance.");
@@ -50,35 +58,46 @@ export default function AiPlanner() {
     if (wallet && provider) checkEligibility();
   }, [wallet]);
 
+  if (eligible && !isMobile) {
+    return (
+      <div className="w-full h-screen">
+        <iframe
+          src={AI_URL}
+          className="w-full h-full border-0"
+          allow="clipboard-write"
+          title="Ihram AI Chat"
+        ></iframe>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white p-6 text-center text-gray-800">
+    <div className="min-h-screen bg-white text-center text-gray-800 p-6">
       <h1 className="text-3xl font-bold mb-6 text-green-700">🧠 Ihram AI Planner</h1>
 
       {!wallet ? (
         <button
           onClick={connectWallet}
-          className="px-6 py-3 bg-green-700 text-white rounded shadow hover:bg-green-800"
+          className="px-6 py-3 bg-green-700 text-white rounded hover:bg-green-800"
         >
           Connect Wallet
         </button>
       ) : loading ? (
-        <p>🔄 Checking your IHRAM balance...</p>
+        <p>🔄 Checking your IHRAM token balance...</p>
       ) : eligible ? (
-        <div className="w-full h-[80vh] mt-4">
-          <iframe
-            src="https://ihram-ai.vercel.app/"
-            className="w-full h-full border-0 rounded-xl"
-            allow="clipboard-write"
-            title="Ihram AI Chat"
-          ></iframe>
-        </div>
+        isMobile ? (
+          <p className="text-green-600 font-semibold">✅ Redirecting to Ihram AI...</p>
+        ) : (
+          <p className="text-green-600 font-semibold">✅ Loading AI Planner...</p>
+        )
       ) : (
-        <div className="mt-4">
-          <p className="text-red-600 font-semibold">
-            ❌ You need at least 1000 IHRAM tokens to access the AI Planner.
-          </p>
-          <p className="text-sm text-gray-500 mt-2">Your wallet: {wallet}</p>
-        </div>
+        <p className="text-red-600 font-semibold">
+          ❌ You need at least 1000 IHRAM tokens to access the AI Planner.
+        </p>
+      )}
+
+      {wallet && (
+        <p className="text-xs text-gray-500 mt-4">Connected: {wallet}</p>
       )}
 
       {error && <p className="text-red-600 mt-4">{error}</p>}
