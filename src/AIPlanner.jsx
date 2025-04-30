@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import * as ethers from "ethers";
+import { Web3Provider } from "@ethersproject/providers";
+import { Contract } from "ethers";
+import { formatUnits } from "ethers/lib/utils";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const tokenABI = [
@@ -35,18 +37,18 @@ export default function AiPlanner() {
           return;
         }
 
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const provider = new Web3Provider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
         const userAddress = await signer.getAddress();
         setWallet(userAddress);
 
-        const token = new ethers.Contract(tokenAddress, tokenABI, provider);
+        const token = new Contract(tokenAddress, tokenABI, provider);
         const balance = await token.balanceOf(userAddress);
         const decimals = await token.decimals();
-        const formatted = ethers.utils.formatUnits(balance, decimals);
+        const readableBalance = parseFloat(formatUnits(balance, decimals));
 
-        setHasAccess(parseFloat(formatted) >= 1000);
+        setHasAccess(readableBalance >= 1000);
       } catch (err) {
         console.error("Error checking balance", err);
       } finally {
