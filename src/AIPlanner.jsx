@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import ethers from "ethers";
+import * as ethers from "ethers";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
-
 const tokenABI = [
   {
     "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
@@ -21,17 +20,18 @@ const tokenABI = [
 ];
 
 export default function AiPlanner() {
-  const [wallet, setWallet] = useState(null);
   const [hasAccess, setHasAccess] = useState(false);
+  const [wallet, setWallet] = useState("");
   const [loading, setLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
+  const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
     async function checkBalance() {
       try {
         if (!window.ethereum) {
-          console.warn("MetaMask not found");
+          setLoading(false);
           return;
         }
 
@@ -44,12 +44,11 @@ export default function AiPlanner() {
         const token = new ethers.Contract(tokenAddress, tokenABI, provider);
         const balance = await token.balanceOf(userAddress);
         const decimals = await token.decimals();
-        const readableBalance = ethers.utils.formatUnits(balance, decimals);
+        const formatted = ethers.utils.formatUnits(balance, decimals);
 
-        console.log("Detected balance:", readableBalance);
-        setHasAccess(parseFloat(readableBalance) >= 1000);
+        setHasAccess(parseFloat(formatted) >= 1000);
       } catch (err) {
-        console.error("Error checking balance:", err);
+        console.error("Error checking balance", err);
       } finally {
         setLoading(false);
       }
@@ -58,22 +57,32 @@ export default function AiPlanner() {
     checkBalance();
   }, []);
 
-  const handleAskAI = async () => {
+  async function handleAskAI() {
     setResponse("Thinking...");
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
-        headers: { "Content-Type": "application/json" }
-      });
-      const data = await res.json();
-      setResponse(data.reply || "No response received.");
-    } catch (err) {
-      setResponse("❌ Failed to contact AI.");
-    }
-  };
 
-  if (loading) return <p className="p-4 text-gray-500">Checking token balance...</p>;
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: prompt }] })
+    });
+
+    const data = await res.json();
+    setResponse(data.reply || "No response.");
+  }
+
+  async function submitFeedback() {
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      body: JSON.stringify({ prompt, response, correction: feedback }),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    const result = await res.text();
+    alert(result === "ok" ? "✅ Feedback submitted!" : "❌ Something went wrong.");
+    setFeedback("");
+  }
+
+  if (loading) return <div className="p-6 text-gray-500">Checking token balance...</div>;
 
   if (!hasAccess) {
     return (
@@ -86,12 +95,12 @@ export default function AiPlanner() {
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold text-green-700">Ihram AI Planner</h1>
-      <p className="text-gray-600">Ask questions about your Hajj or Umrah. Earn tokens by helping improve the AI.</p>
+      <p className="text-gray-600">Ask personalized questions about your Hajj or Umrah journey.</p>
 
       <textarea
         className="w-full border p-3 rounded text-sm"
         rows={4}
-        placeholder="Ask about Umrah, Hajj, planning, or pricing..."
+        placeholder="Ask a question about Umrah, Hajj, planning, or pricing..."
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
       />
@@ -107,6 +116,25 @@ export default function AiPlanner() {
         <div className="mt-6 bg-gray-100 p-4 rounded">
           <p className="font-semibold text-gray-700 mb-2">AI Response:</p>
           <p className="text-gray-800 whitespace-pre-wrap">{response}</p>
+        </div>
+      )}
+
+      {response && (
+        <div className="mt-6">
+          <p className="text-sm text-gray-700 mb-2">Suggest a correction (Train-to-Earn):</p>
+          <textarea
+            className="w-full border p-2 rounded text-sm"
+            rows={3}
+            placeholder="Your correction or improvement..."
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+          />
+          <button
+            onClick={submitFeedback}
+            className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Submit Feedback
+          </button>
         </div>
       )}
     </main>
