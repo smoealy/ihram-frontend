@@ -1,6 +1,6 @@
-import DashboardWidgets from "./DashboardWidgets";
-import StakingForm from "./StakingForm";
-import DonationForm from "./DonationForm";
+import DashboardWidgets from "../DashboardWidgets";
+import StakingForm from "../StakingForm";
+import DonationForm from "../DonationForm";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { Link } from "react-router-dom";
