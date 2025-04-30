@@ -31,14 +31,13 @@ export default function AiPlanner() {
       const userAddress = await signer.getAddress();
 
       const token = new ethers.Contract(tokenAddress, tokenABI, web3Provider);
-      const [rawBalance, decimals] = await Promise.all([
-        token.balanceOf(userAddress),
-        token.decimals(),
-      ]);
-      const balance = Number(ethers.utils.formatUnits(rawBalance, decimals));
+      const rawBalance = await token.balanceOf(userAddress);
+      const decimals = await token.decimals();
+      const balance = parseFloat(ethers.utils.formatUnits(rawBalance, decimals));
+
       setWallet(userAddress);
       setProvider(web3Provider);
-      setHasAccess(balance >= 1000); // You hold 900M, so this should pass
+      setHasAccess(balance >= 1000);
     } catch (err) {
       console.error("Error checking balance", err);
     } finally {
@@ -51,7 +50,7 @@ export default function AiPlanner() {
     setResponse("");
 
     try {
-      const res = await fetch("https://ihram-ai.vercel.app", {
+      const res = await fetch("https://ihram-ai.vercel.app/api/chat", {
         method: "POST",
         body: JSON.stringify({
           messages: [{ role: "user", content: prompt }],
