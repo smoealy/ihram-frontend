@@ -1,8 +1,10 @@
 import DashboardWidgets from "./DashboardWidgets";
 import StakingForm from "./StakingForm";
 import DonationForm from "./DonationForm";
+import AiPlanner from "./pages/AiPlanner";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const tokenSaleAddress = "0xa703b6393b0caf374cb7ebe2eb760bb372f38d82";
@@ -25,12 +27,11 @@ const vestingABI = [
 ];
 
 const tokenABI = ["function balanceOf(address) view returns (uint256)"];
-
 const routerABI = [
   "function getAmountsOut(uint amountIn, address[] memory path) view returns (uint[] memory amounts)"
 ];
 
-export default function App() {
+function DashboardApp() {
   const [wallet, setWallet] = useState(null);
   const [provider, setProvider] = useState(null);
   const [price, setPrice] = useState(null);
@@ -219,33 +220,18 @@ export default function App() {
           </button>
           {showDonation && <DonationForm />}
         </div>
-
-        {/* ✅ RedemptionForm toggle removed to avoid duplicate rendering */}
-
-        {isOwner && (
-          <div className="border p-4 rounded-xl shadow bg-gray-50">
-            <h2 className="text-xl font-semibold text-red-600">Admin Panel</h2>
-            <p className="text-sm text-gray-600 mb-4">You are the contract owner.</p>
-
-            <div className="mb-4">
-              <h3 className="font-bold">Configure Round</h3>
-              <input type="number" placeholder="Round ID" value={roundConfig.roundId} onChange={e => setRoundConfig({ ...roundConfig, roundId: parseInt(e.target.value) })} className="p-1 border rounded m-1" />
-              <input type="number" placeholder="Rate" value={roundConfig.rate} onChange={e => setRoundConfig({ ...roundConfig, rate: parseInt(e.target.value) })} className="p-1 border rounded m-1" />
-              <input type="text" placeholder="Min ETH" value={roundConfig.min} onChange={e => setRoundConfig({ ...roundConfig, min: e.target.value })} className="p-1 border rounded m-1" />
-              <input type="text" placeholder="Max ETH" value={roundConfig.max} onChange={e => setRoundConfig({ ...roundConfig, max: e.target.value })} className="p-1 border rounded m-1" />
-              <input type="text" placeholder="Cap ETH" value={roundConfig.cap} onChange={e => setRoundConfig({ ...roundConfig, cap: e.target.value })} className="p-1 border rounded m-1" />
-              <input type="text" placeholder="Vesting Address" value={roundConfig.vesting} onChange={e => setRoundConfig({ ...roundConfig, vesting: e.target.value })} className="p-1 border rounded m-1 w-full" />
-              <button onClick={configureRound} className="bg-purple-600 text-white px-4 py-2 rounded-md mt-2">Configure</button>
-            </div>
-
-            <div className="mb-4">
-              <h3 className="font-bold">Activate Round</h3>
-              <input type="number" value={activateId} onChange={e => setActivateId(parseInt(e.target.value))} className="p-1 border rounded m-1" />
-              <button onClick={activateRound} className="bg-green-700 text-white px-4 py-2 rounded-md mt-2">Activate</button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<DashboardApp />} />
+        <Route path="/ai-planner" element={<AiPlanner />} />
+      </Routes>
+    </Router>
   );
 }
