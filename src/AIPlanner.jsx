@@ -34,7 +34,7 @@ export default function AiPlanner() {
           return;
         }
 
-        const provider = new ethers.providers.Web3Provider(window.ethereum); // ✅ ethers v5
+        const provider = new ethers.providers.Web3Provider(window.ethereum); // ✅ Ethers v5
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
         const address = await signer.getAddress();
@@ -43,11 +43,11 @@ export default function AiPlanner() {
         const balance = await token.balanceOf(address);
         const decimals = await token.decimals();
 
-        const readableBalance = parseFloat(ethers.utils.formatUnits(balance, decimals));
-        console.log("User balance:", readableBalance);
-        setHasAccess(readableBalance >= 1000);
+        const readable = Number(ethers.utils.formatUnits(balance, decimals));
+        console.log("Balance check:", readable);
+        setHasAccess(readable >= 1000); // Set your threshold here
       } catch (err) {
-        console.error("Balance check failed", err);
+        console.error("Error checking balance", err);
       } finally {
         setLoading(false);
       }
@@ -67,7 +67,7 @@ export default function AiPlanner() {
         })
       });
       const data = await res.json();
-      setResponse(data.reply || "No reply received.");
+      setResponse(data.reply || "No response received.");
     } catch (err) {
       setResponse("Error talking to AI.");
     }
@@ -88,12 +88,12 @@ export default function AiPlanner() {
     setFeedback("");
   }
 
-  if (loading) return <div className="p-6">Checking your IHRAM balance...</div>;
+  if (loading) return <div className="p-6">⏳ Checking your IHRAM balance...</div>;
 
   if (!hasAccess) {
     return (
       <div className="p-6 text-red-600 font-semibold">
-        ❌ You need at least <strong>1,000 IHRAM</strong> tokens to access the AI Planner.
+        ❌ You need at least <strong>1,000 IHRAM</strong> tokens to access this AI.
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function AiPlanner() {
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold text-green-700">Ihram AI Planner</h1>
       <p className="text-gray-600">
-        Ask personalized questions about Hajj, Umrah, or token usage. Help improve AI and earn rewards.
+        Ask anything about your Hajj or Umrah journey. Get personalized AI support.
       </p>
 
       <textarea
@@ -110,7 +110,7 @@ export default function AiPlanner() {
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         className="w-full p-3 border rounded"
-        placeholder="Ask about rituals, packing, visa, or savings..."
+        placeholder="Ask about rituals, visas, packing, token utility..."
       />
 
       <button
@@ -135,7 +135,7 @@ export default function AiPlanner() {
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             className="w-full p-2 border rounded"
-            placeholder="How can this response improve?"
+            placeholder="How can this response be improved?"
           />
           <button
             onClick={sendFeedback}
