@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
-import { ethers } from "ethers";
-
-const { Web3Provider } = ethers.providers;
+import { useEffect, useState } from "react";
+import ethers from "ethers";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 
@@ -24,7 +22,6 @@ const tokenABI = [
 
 export default function AiPlanner() {
   const [wallet, setWallet] = useState(null);
-  const [provider, setProvider] = useState(null);
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
@@ -33,22 +30,26 @@ export default function AiPlanner() {
   useEffect(() => {
     async function checkBalance() {
       try {
-        if (!window.ethereum) return;
+        if (!window.ethereum) {
+          console.warn("MetaMask not found");
+          return;
+        }
 
-        const _provider = new Web3Provider(window.ethereum);
-        setProvider(_provider);
-        const signer = _provider.getSigner();
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
         const userAddress = await signer.getAddress();
         setWallet(userAddress);
 
-        const token = new ethers.Contract(tokenAddress, tokenABI, _provider);
+        const token = new ethers.Contract(tokenAddress, tokenABI, provider);
         const balance = await token.balanceOf(userAddress);
         const decimals = await token.decimals();
         const readableBalance = ethers.utils.formatUnits(balance, decimals);
 
+        console.log("Detected balance:", readableBalance);
         setHasAccess(parseFloat(readableBalance) >= 1000);
       } catch (err) {
-        console.error("Error checking balance", err);
+        console.error("Error checking balance:", err);
       } finally {
         setLoading(false);
       }
@@ -85,12 +86,12 @@ export default function AiPlanner() {
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold text-green-700">Ihram AI Planner</h1>
-      <p className="text-gray-600">Ask personalized questions about your Hajj or Umrah journey.</p>
+      <p className="text-gray-600">Ask questions about your Hajj or Umrah. Earn tokens by helping improve the AI.</p>
 
       <textarea
         className="w-full border p-3 rounded text-sm"
         rows={4}
-        placeholder="Ask a question about Umrah, Hajj, planning, or pricing..."
+        placeholder="Ask about Umrah, Hajj, planning, or pricing..."
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
       />
