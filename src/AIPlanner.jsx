@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
+
 const tokenABI = [
   {
     "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
@@ -19,7 +20,7 @@ const tokenABI = [
   }
 ];
 
-export default function AIPlanner() {
+export default function AiPlanner() {
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
@@ -54,9 +55,7 @@ export default function AIPlanner() {
 
   async function handleAskAI() {
     setResponse("Thinking...");
-    const messages = [
-      { role: "user", content: prompt }
-    ];
+    const messages = [{ role: "user", content: prompt }];
 
     const res = await fetch("/api/chat", {
       method: "POST",
