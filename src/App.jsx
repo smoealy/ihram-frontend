@@ -175,13 +175,13 @@ export default function App() {
           </button>
         </div>
 
-        {/* ✅ New AI Planner button */}
+        {/* ✅ Link to AI Planner */}
         <div className="text-center">
           <Link
             to="/ai-planner"
-            className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 inline-block"
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-900 inline-block"
           >
-            ✨ Try AI Planner
+            ✨ Try AI-Powered Umrah Planner
           </Link>
         </div>
 
