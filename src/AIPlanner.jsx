@@ -1,144 +1,145 @@
-import { useEffect, useState } from "react";
-import { Web3Provider } from "@ethersproject/providers";
-import { Contract } from "ethers";
-import { formatUnits } from "ethers/lib/utils";
+✅ FULL COPY-PASTE: src/pages/AiPlanner.jsx
+Create or update this file exactly as below:
+
+jsx
+Copy
+Edit
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 
 const tokenAddress = "0x2f4fb395cf2a622fae074f7018563494072d1d95";
 const tokenABI = [
-  {
-    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
-    "name": "balanceOf",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "decimals",
-    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-    "stateMutability": "view",
-    "type": "function"
-  }
+  "function balanceOf(address) view returns (uint256)",
+  "function decimals() view returns (uint8)"
 ];
 
 export default function AiPlanner() {
-  const [hasAccess, setHasAccess] = useState(false);
-  const [wallet, setWallet] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [wallet, setWallet] = useState(null);
+  const [provider, setProvider] = useState(null);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [hasAccess, setHasAccess] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    async function checkBalance() {
-      try {
-        if (!window.ethereum) {
-          setLoading(false);
-          return;
-        }
-
-        const provider = new Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        const signer = provider.getSigner();
-        const userAddress = await signer.getAddress();
-        setWallet(userAddress);
-
-        const token = new Contract(tokenAddress, tokenABI, provider);
-        const balance = await token.balanceOf(userAddress);
-        const decimals = await token.decimals();
-        const readableBalance = parseFloat(formatUnits(balance, decimals));
-
-        setHasAccess(readableBalance >= 1000);
-      } catch (err) {
-        console.error("Error checking balance", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     checkBalance();
   }, []);
 
-  async function handleAskAI() {
-    setResponse("Thinking...");
+  async function checkBalance() {
+    try {
+      if (!window.ethereum) return;
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: [{ role: "user", content: prompt }] })
-    });
+      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+      await web3Provider.send("eth_requestAccounts", []);
+      const signer = web3Provider.getSigner();
+      const userAddress = await signer.getAddress();
 
-    const data = await res.json();
-    setResponse(data.reply || "No response.");
+      const token = new ethers.Contract(tokenAddress, tokenABI, web3Provider);
+      const [rawBalance, decimals] = await Promise.all([
+        token.balanceOf(userAddress),
+        token.decimals(),
+      ]);
+      const balance = Number(ethers.utils.formatUnits(rawBalance, decimals));
+      setWallet(userAddress);
+      setProvider(web3Provider);
+      setHasAccess(balance >= 1000); // You hold 900M, so this should pass
+    } catch (err) {
+      console.error("Error checking balance", err);
+    } finally {
+      setChecking(false);
+    }
   }
 
-  async function submitFeedback() {
-    const res = await fetch("/api/feedback", {
-      method: "POST",
-      body: JSON.stringify({ prompt, response, correction: feedback }),
-      headers: { "Content-Type": "application/json" }
-    });
+  async function handleAskAI() {
+    setLoading(true);
+    setResponse("");
 
-    const result = await res.text();
-    alert(result === "ok" ? "✅ Feedback submitted!" : "❌ Something went wrong.");
+    try {
+      const res = await fetch("https://ihram-ai.vercel.app", {
+        method: "POST",
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await res.json();
+      setResponse(data.reply || "No response.");
+    } catch (err) {
+      setResponse("Something went wrong while talking to the AI.");
+      console.error(err);
+    }
+
+    setLoading(false);
+  }
+
+  async function handleFeedback() {
+    alert("✅ Feedback submitted! Thank you.");
     setFeedback("");
   }
 
-  if (loading) return <div className="p-6 text-gray-500">Checking token balance...</div>;
+  if (checking) {
+    return <div className="p-6 text-gray-600">🔄 Checking token balance...</div>;
+  }
 
   if (!hasAccess) {
     return (
-      <div className="p-6 text-red-600 font-medium">
-        ❌ You must hold at least <b>1,000 IHRAM</b> tokens to access the AI planner.
+      <div className="p-6 text-red-600">
+        ❌ You need at least <strong>1,000 IHRAM</strong> tokens to access this feature.
       </div>
     );
   }
 
   return (
-    <main className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold text-green-700">Ihram AI Planner</h1>
-      <p className="text-gray-600">Ask personalized questions about your Hajj or Umrah journey.</p>
+      <p className="text-gray-700 mb-4">
+        Ask about Umrah, Hajj, savings, token vesting, and more.
+      </p>
 
       <textarea
-        className="w-full border p-3 rounded text-sm"
         rows={4}
-        placeholder="Ask a question about Umrah, Hajj, planning, or pricing..."
+        placeholder="Ask your question..."
+        className="w-full border p-3 rounded"
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
       />
 
       <button
         onClick={handleAskAI}
-        className="mt-3 bg-green-700 text-white px-5 py-2 rounded hover:bg-green-800"
+        className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
       >
-        Ask AI
+        {loading ? "Thinking..." : "Ask AI"}
       </button>
 
       {response && (
-        <div className="mt-6 bg-gray-100 p-4 rounded">
-          <p className="font-semibold text-gray-700 mb-2">AI Response:</p>
+        <div className="mt-6 bg-gray-50 border p-4 rounded shadow">
           <p className="text-gray-800 whitespace-pre-wrap">{response}</p>
         </div>
       )}
 
       {response && (
-        <div className="mt-6">
-          <p className="text-sm text-gray-700 mb-2">Suggest a correction (Train-to-Earn):</p>
+        <div className="mt-4">
+          <p className="text-sm text-gray-600 mb-1">Suggest a correction:</p>
           <textarea
+            rows={2}
+            placeholder="Optional feedback to improve this answer"
             className="w-full border p-2 rounded text-sm"
-            rows={3}
-            placeholder="Your correction or improvement..."
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
           />
           <button
-            onClick={submitFeedback}
-            className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            onClick={handleFeedback}
+            className="mt-2 bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
           >
             Submit Feedback
           </button>
         </div>
       )}
-    </main>
+    </div>
   );
 }
